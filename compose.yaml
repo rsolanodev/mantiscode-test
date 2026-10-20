@@ -1,0 +1,117 @@
+# Stack de desarrollo local: Postgres + Redis + Adminer (dev/infra).
+#
+# Todas las variables usan sintaxis `${VAR:-default}`: el stack funciona sin
+# archivo `.env`. Copia `.env.example` a `.env` para personalizar puertos,
+# credenciales o versiones de imagen sin tocar este archivo.
+#
+# Perfiles:
+#   - (ninguno)  → postgres, redis, adminer
+#   - tools      → + redis-commander (UI de Redis)
+#   - check      → smoke (verificación one-shot: `docker compose run --rm smoke`)
+
+name: devstack
+
+services:
+  postgres:
+    image: ${POSTGRES_IMAGE:-postgres:17-alpine}
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-devstack}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-devstack}
+      POSTGRES_DB: ${POSTGRES_DB:-devstack}
+    ports:
+      - "127.0.0.1:${POSTGRES_PORT:-5432}:5432"
+    volumes:
+      - devstack_pgdata:/var/lib/postgresql/data
+    networks:
+      - devstack
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB}"]
+      interval: 5s
+      timeout: 3s
+      retries: 12
+      start_period: 5s
+    restart: unless-stopped
+
+  redis:
+    image: ${REDIS_IMAGE:-redis:7-alpine}
+    command:
+      ["redis-server", "--appendonly", "yes", "--requirepass", "${REDIS_PASSWORD:-devstack-redis}"]
+    environment:
+      REDIS_PASSWORD: ${REDIS_PASSWORD:-devstack-redis}
+    ports:
+      - "127.0.0.1:${REDIS_PORT:-6379}:6379"
+    volumes:
+      - devstack_redisdata:/data
+    networks:
+      - devstack
+    healthcheck:
+      test: ["CMD-SHELL", "redis-cli -a \"$${REDIS_PASSWORD}\" ping | grep -q PONG"]
+      interval: 5s
+      timeout: 3s
+      retries: 12
+    restart: unless-stopped
+
+  adminer:
+    image: ${ADMINER_IMAGE:-adminer:4.17.1}
+    ports:
+      - "127.0.0.1:${ADMINER_PORT:-8081}:8080"
+    networks:
+      - devstack
+    depends_on:
+      postgres:
+        condition: service_healthy
+    restart: unless-stopped
+
+  redis-commander:
+    # Solo publica el tag `latest` (sin versiones): versión fijada por digest
+    # del pull verificado (ver .env.example para actualizarla).
+    image: ${REDIS_COMMANDER_IMAGE:-rediscommander/redis-commander@sha256:19cd0c49f418779fa2822a0496c5e6516d0c792effc39ed20089e6268477e40a}
+    profiles: ["tools"]
+    environment:
+      REDIS_HOST: redis
+      REDIS_PORT: "6379"
+      REDIS_PASSWORD: ${REDIS_PASSWORD:-devstack-redis}
+    ports:
+      - "127.0.0.1:${REDIS_COMMANDER_PORT:-8082}:8081"
+    networks:
+      - devstack
+    depends_on:
+      redis:
+        condition: service_healthy
+    restart: unless-stopped
+
+  smoke:
+    build:
+      context: ./docker/smoke
+      # El bridge por defecto de este entorno no tiene NAT de salida:
+      # pip necesita la red del host para descargar dependencias.
+      network: host
+    profiles: ["check"]
+    environment:
+      POSTGRES_HOST: postgres
+      POSTGRES_PORT: "5432"
+      POSTGRES_USER: ${POSTGRES_USER:-devstack}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-devstack}
+      POSTGRES_DB: ${POSTGRES_DB:-devstack}
+      REDIS_HOST: redis
+      REDIS_PORT: "6379"
+      REDIS_PASSWORD: ${REDIS_PASSWORD:-devstack-redis}
+      REDIS_SMOKE_TTL: "2"
+    networks:
+      - devstack
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    restart: "no"
+
+networks:
+  devstack:
+    name: devstack
+
+volumes:
+  devstack_pgdata:
+    name: devstack_pgdata
+  devstack_redisdata:
+    name: devstack_redisdata
