@@ -15,8 +15,14 @@ Todos los puertos se publican **solo en `127.0.0.1`** (nada accesible desde fuer
 | `redis-commander`  | `rediscommander/redis-commander` (digest fijado) | `8082`      | `tools` | UI web para Redis: http://127.0.0.1:8082 |
 | `smoke`            | build local (`docker/smoke/`)      | —                         | `check` | One-shot; se ejecuta con `run --rm`     |
 
-Los servicios se resuelven por nombre en la red interna `devstack`; los dependientes
+Los servicios se alcanzan por nombre en la red interna `devstack`; los dependientes
 esperan a que `postgres`/`redis` reporten `healthy` (`depends_on: service_healthy`).
+
+> **Nota de entorno:** este sandbox no soporta el DNS embebido de Docker (el resolver
+> `127.0.0.11` no responde), así que `compose.yaml` asigna IPs estáticas a `postgres`
+> (`172.28.0.10`) y `redis` (`172.28.0.11`) en la subred fija `172.28.0.0/24`, y los
+> servicios dependientes reciben el alias nombre→IP vía `extra_hosts`. Ninguna
+> configuración de aplicación lleva IPs: todo sigue por nombre (`postgres`, `redis`).
 
 ## Ciclo de vida
 
@@ -30,6 +36,9 @@ docker compose down             # parar y quitar contenedores (conserva volúmen
 
 `up -d` es idempotente: un segundo `up -d` no recrea contenedores sanos.
 Los datos persisten en volúmenes nombrados y sobreviven a `down`/`up -d` (sin `-v`).
+
+> Ojo: `docker compose down` (sin perfiles) no detiene los contenedores de perfiles
+> activos (`redis-commander`); para bajar todo: `docker compose --profile tools down`.
 
 ## Verificación (smoke)
 

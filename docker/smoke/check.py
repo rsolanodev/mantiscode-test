@@ -38,7 +38,8 @@ REQUIRED_ENV = (
 
 # Parámetros opcionales de la propia prueba.
 PG_TABLE = os.environ.get("SMOKE_PG_TABLE", "smoke_test")
-REDIS_SMOKE_TTL = float(os.environ.get("REDIS_SMOKE_TTL", "2"))
+# redis-py solo acepta enteros (o timedelta) en `ex=`: TTL en segundos.
+REDIS_SMOKE_TTL = int(os.environ.get("REDIS_SMOKE_TTL", "2"))
 REDIS_KEY = os.environ.get("SMOKE_REDIS_KEY", "smoke:test")
 
 

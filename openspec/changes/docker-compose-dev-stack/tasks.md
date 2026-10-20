@@ -22,14 +22,14 @@
 ## 4. Validación del stack contra los specs
 
 - [x] 4.1 `docker compose up -d` desde cero: los tres servicios base quedan `running` y `healthy`, y `adminer`/`smoke` no arrancan antes de que `postgres`/`redis` estén healthy
-- [ ] 4.2 `docker compose run --rm smoke` termina con código 0, imprime PASS/FAIL por comprobación y el contenedor se elimina
-- [ ] 4.3 Persistencia: escribir fila en Postgres y clave TTL en Redis, `docker compose down` + `up -d`, y repetir la verificación (los datos sobreviven)
-- [ ] 4.4 Idempotencia: un segundo `docker compose up -d` no recrea contenedores sanos (`docker compose ps` sin restarts)
-- [ ] 4.5 Escenarios de fallo: detener `redis` y confirmar que `smoke` falla con código no-0 indicando la comprobación fallida; restaurar después
-- [ ] 4.6 Configuración: cambiar un puerto y la contraseña de Redis vía `.env`, recrear y validar que el stack y `smoke` siguen funcionando; borrar `.env` y validar arranque con defaults
-- [ ] 4.7 Perfiles: `up -d` por defecto no levanta `tools`/`check`; `--profile tools up -d` deja la UI de Redis accesible en su puerto
+- [x] 4.2 `docker compose run --rm smoke` termina con código 0, imprime PASS/FAIL por comprobación y el contenedor se elimina
+- [x] 4.3 Persistencia: escribir fila en Postgres y clave TTL en Redis, `docker compose down` + `up -d`, y repetir la verificación (los datos sobreviven)
+- [x] 4.4 Idempotencia: un segundo `docker compose up -d` no recrea contenedores sanos (`docker compose ps` sin restarts)
+- [x] 4.5 Escenarios de fallo: detener `redis` y confirmar que `smoke` falla con código no-0 indicando la comprobación fallida; restaurar después
+- [x] 4.6 Configuración: cambiar un puerto y la contraseña de Redis vía `.env`, recrear y validar que el stack y `smoke` siguen funcionando; borrar `.env` y validar arranque con defaults
+- [x] 4.7 Perfiles: `up -d` por defecto no levanta `tools`/`check`; `--profile tools up -d` deja la UI de Redis accesible en su puerto
 
 ## 5. Documentación y cierre
 
-- [ ] 5.1 Actualizar `README.md`: propósito del stack, tabla de servicios y puertos, ciclo de vida (`up`, `ps`, `logs`, `down`, `run --rm smoke`), perfiles, configuración por `.env` y limpieza de disco (`docker compose down -v --rmi local`, `docker system df`)
-- [ ] 5.2 Validar el change con `openspec validate` y dejar el repo limpio de ficheros temporales
+- [x] 5.1 Actualizar `README.md`: propósito del stack, tabla de servicios y puertos, ciclo de vida (`up`, `ps`, `logs`, `down`, `run --rm smoke`), perfiles, configuración por `.env` y limpieza de disco (`docker compose down -v --rmi local`, `docker system df`)
+- [x] 5.2 Validar el change con `openspec validate` y dejar el repo limpio de ficheros temporales

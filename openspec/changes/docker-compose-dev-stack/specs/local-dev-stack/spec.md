@@ -31,12 +31,12 @@ Los servicios `postgres` y `redis` SHALL definir healthchecks, y ningún servici
 
 ### Requirement: Red interna con resolución por nombre de servicio
 
-El stack SHALL usar una red interna dedicada en la que los contenedores se resuelvan entre sí por nombre de servicio.
+El stack SHALL usar una red interna dedicada en la que los contenedores se alcancen entre sí por nombre de servicio. En este entorno el DNS embebido de Docker no está disponible, por lo que la resolución de nombres SHALL garantizarse con IPs estáticas asignadas por Compose en la red dedicada y entradas `extra_hosts` (alias nombre→IP en `/etc/hosts`), de modo que ningún servicio dependiente lleve IPs en su propia configuración.
 
 #### Scenario: Resolución entre contenedores
 
 - **WHEN** un contenedor del stack intenta alcanzar `postgres` o `redis` por nombre de servicio
-- **THEN** la conexión se establece por la red interna sin usar IPs fijas
+- **THEN** la conexión se establece por la red interna usando el mapeo nombre→IP gestionado por Compose (`extra_hosts`), sin IPs en la configuración de aplicación de los servicios
 
 ### Requirement: Persistencia en volúmenes nombrados
 

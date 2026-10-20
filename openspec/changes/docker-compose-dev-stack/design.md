@@ -44,6 +44,8 @@ La motivación está en `proposal.md` — Why; los requisitos en los deltas de `
 
 8. **Puertos publicados en `127.0.0.1`.** Adminer y Redis Commander en puertos altos (p. ej. 8081/8082 por defecto) para evitar colisiones; Postgres/Redis publicados también en localhost para uso desde el host.
 
+9. **Resolución de nombres con IPs estáticas + `extra_hosts` (decisión de implementación).** El sandbox no soporta el DNS embebido de Docker: el resolver `127.0.0.11` no responde (verificado con `getent` y queries UDP crudas desde contenedores, tanto nombres internos como externos), aunque la conectividad IP de la red dedicada funciona. La red `devstack` usa subred fija `172.28.0.0/24` con IPs estáticas para `postgres` (`172.28.0.10`) y `redis` (`172.28.0.11`), y los servicios dependientes reciben el mapeo nombre→IP vía `extra_hosts` (entradas en `/etc/hosts` gestionadas por Compose). Las aplicaciones siguen configuradas por nombre (`POSTGRES_HOST=postgres`, `REDIS_HOST=redis`) y sin IPs en su configuración. *Alternativas descartadas:* conectar vía `host-gateway` a los puertos publicados (el tráfico sale de la red interna y no la ejercita) o desplegar un DNS propio (añade un servicio y acoplamiento para el mismo resultado).
+
 ## Risks / Trade-offs
 
 - [El daemon no puede descargar imágenes (red)] → Primera tarea de implementación: `docker pull` de las 5 imágenes y confirmación de tags reales antes de escribir el resto.
@@ -52,6 +54,7 @@ La motivación está en `proposal.md` — Why; los requisitos en los deltas de `
 - [Puertos ya ocupados en el host] → Puertos por defecto altos y sobreescribibles por `.env`; los healthchecks fallarían de forma visible si hay colisión.
 - [Disco del workspace] → Imágenes alpine/slim y limpieza documentada: `docker compose down -v --rmi local` + `docker system df` en el README.
 - [Sin salida a internet en runtime] → Ninguna verificación ni servicio necesita internet tras el build; solo pip (host) y `docker pull` (daemon) lo usan.
+- [DNS embebido de Docker no disponible en el sandbox] → IPs estáticas + `extra_hosts` en `compose.yaml`; si el entorno llegara a soportar el resolver, se pueden retirar `ipam`/`extra_hosts` sin tocar la configuración de aplicación.
 
 ## Migration Plan
 
